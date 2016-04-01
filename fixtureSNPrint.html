@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html" charset="utf-8">
+	<title>打印机架条码</title>
+	<link rel="icon" href="favicon.ico" type="image/x-icon" />
+	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+	<script type="text/javascript">
+		function init(){
+			createPortObject();
+			var thePort = document.getElementById('thePort');	
+			var PortsAvailable = thePort.PortsAvailable;
+			//alert(PortsAvailable);
+			var arrPorts = PortsAvailable.split(",");
+			var portList = document.getElementById('portList');
+			var arrPortsLength = arrPorts.length;
+			if(PortsAvailable != ""){
+				for (var i = 0; i < arrPortsLength; i++) {
+					portList.options.add(new Option("COM" + arrPorts[i], arrPorts[i]));
+				}				
+			} else {
+				document.getElementById("initResultStr").innerHTML = "没检测到串口或没有安装打印用ActiveX控件";
+			}
+		}
+
+		function createPortObject(){
+			var browserVerStr = getBrowserVer(true);
+			// alert(browserVerStr);
+			if(browserVerStr.indexOf("IE")>=0){
+				document.getElementById("thePortObject").innerHTML = '<object id="thePort" classid="CLSID:7E42B8C5-73BE-4806-8904-FF4080A696EC" width="0" height="0"></object>';
+			} else if(browserVerStr.indexOf("Firefox")>=0){
+				document.getElementById("thePortObject").innerHTML = '<object id="thePort" clsid="{7E42B8C5-73BE-4806-8904-FF4080A696EC}" TYPE="application/x-itst-activex" width="0" height="0"></object>';
+			} else if(browserVerStr.indexOf("Chrome")>=0){
+				document.getElementById("thePortObject").innerHTML = '<object id="thePort" clsid="{7E42B8C5-73BE-4806-8904-FF4080A696EC}" TYPE="application/x-itst-activex" width="0" height="0"></object>';
+			} else {
+				document.getElementById("thePortObject").innerHTML = '<object id="thePort" classid="CLSID:7E42B8C5-73BE-4806-8904-FF4080A696EC" width="0" height="0"></object>';
+			}
+		}
+
+		function getBrowserVer(mainBrowserOnly)
+		{
+			var nua = navigator.userAgent;
+			if(!mainBrowserOnly)
+			{
+				if(nua.indexOf("BIDUBrowser/")>=0){return "BIDUBrowser";}
+				if(nua.indexOf("UCBrowser/")>=0){return "UCBrowser";}
+				if(nua.indexOf("UBrowser/")>=0){return "UBrowser";}
+				if(nua.indexOf("TaoBrowser")>=0){return "TaoBrowser";}
+				if(nua.indexOf("LBBROWSER")>=0){return "LBBROWSER";}
+				if(nua.indexOf("Maxthon/")>=0){return "Maxthon";}
+				if(nua.indexOf("QQBrowser/")>=0){return "QQBrowser";}
+				if(nua.indexOf("SE")>=0){return "SE";}//Sogo Explorer
+			}
+			if(nua.indexOf("Trident")>=0)//IE11
+			{
+				if(nua.indexOf("MSIE 8.0")>=0){return "IE8";}
+				if(nua.indexOf("MSIE 9.0")>=0){return "IE9";}
+				if(nua.indexOf("Xbox")>=0){return "IE XBOX";}
+				if(nua.indexOf("MSIE 10.0")>=0){return "IE10";}
+				if(nua.indexOf("rv:11.0")>=0){return "IE11";}
+				return"Trident";
+			}
+			if(nua.indexOf("MSIE")>=0)//IE6,7
+			{
+				if(nua.indexOf("MSIE 6.0")>=0){return "IE6";}
+				if(nua.indexOf("MSIE 7.0")>=0){return "IE7";}
+				return "MSIE";
+			}
+			if(nua.indexOf("Gecko/")>=0)//Mozilla Firefox series
+			{
+				if(nua.indexOf("Firefox")>=0){return "Firefox";}
+				return "Gecko";
+			}
+			if(nua.indexOf("WebKit")>=0)//chrome, safari series
+			{
+				if(nua.indexOf("Edge")>=0){return "Edge";}
+				if(nua.indexOf("OPR/")>=0){return "Opera";}
+				if(nua.indexOf("Chrome")>=0){return "Chrome";}
+				if(nua.indexOf("Android")>=0){return "WebKit";}
+				if(nua.indexOf("Safari")>=0){return "Safari";} 
+				
+			}
+			if(nua.indexOf("Presto")>=0)//opera series
+			{
+				if(nua.indexOf("Opera")>=0){return "Opera";}
+				return "Presto";
+			}
+			if(nua.indexOf("Camino")>=0)//ff on mac,stoped development
+			{
+				return "Camino";
+			}
+		}
+
+		function printSN(){
+			document.getElementById("printResultStr").innerHTML = "";
+			var portNo = document.getElementById("portList").value;
+			//alert("portNo: " + portNo);
+			if(portNo != ""){
+				//alert("in print");
+				if(checkSnFormat() == true){
+					SetPort(portNo);
+					BarCodePrint();
+					alert("SN条码已打印，请对比检查!");
+					ClosePort(portNo);
+				} else {
+					document.getElementById("printResultStr").innerHTML = "请URL带入正确的格式：TODO";
+				}
+			} else {
+				document.getElementById("printResultStr").innerHTML = "没检测到串口, 本页只支持IE内核浏览器。";
+			}
+		}
+
+		function checkSnFormat(){
+			return(true);
+		}
+
+		function GenZPLCode(){
+			var customer   = Request('customer');
+			var model      = Request('model');
+			var fixture    = Request('fixture');
+			var uut_PN     = Request('uut_PN');
+			var fixture_No = Request('fixture_No');
+			var sn         = Request('sn');
+			var subSN1 = sn.substring(0,4);
+			var subSN2 = sn.substring(5,7);
+			var subSN3 = sn.substring(8,12);
+
+			var code =  "^XA^SZ2^JMA^MCY^PMN^PW1186~JSN^MD20^JZY^LH0,0^LRN^XZ" + 
+						"^XA^FO41,91^GB683,0,4^FS^FO39,172^GB685,0,4^FS^FO34,258^GB692,0,4^FS^FO41,332^GB1014,0,4^FS^FO39,405^GB1019,0,4^FS^FO261,22^GB0,568,4^FS^FO722,23^GB0,312,4^FS" +
+						"^FT48,73^CI0^A0N,51,46^FDCustomer:" + 
+						"^FS^FT269,72^A0N,42,51^FD" + customer + "^FS" +
+						"^FT48,147^A0N,51,46^FDModel:^FS" +
+						"^FT48,227^A0N,51,46^FDFixture:^FS" +
+						"^FT48,313^A0N,51,46^FDUUT P/N:^FS" +
+						"^FT48,390^A0N,51,46^FDFixture No:^FS" +
+						"^FT48,465^A0N,51,46^FDSerial No:^FS" +
+						"^FT269,153^A0N,42,51^FD" + model + "^FS" +
+						"^FT269,234^A0N,42,58^FD" + fixture + "^FS" +
+						"^FT269,312^A0N,42,55^FD" + uut_PN + "^FS" +
+						"^FT269,389^A0N,42,58^FD" + fixture_No + "^FS" +
+						// "^FO374,424^BY3^BCN,93,N,N^FD>;" + subSN1 + ">6-" + subSN2 + "->5" + subSN3 + "^FS" +
+						"^FO374,424^BY3^BCN,93,N,N^FD>:" + sn + "^FS" +
+						"^FT326,567^A0N,59,91^FD" + sn + "^FS" +
+						"^FO754,40^BQN,2,8^FDLA," + customer + ";" + model +";" + fixture + ";" + uut_PN + ";" + fixture_No + ";" + sn + ";" + "^FS" +
+						"^FO35,17^GB1022,579,6,B,35^FS" +
+						"^PQ1,0,1,Y^XZ";
+				
+			// alert(code);
+			return(code);
+		}
+
+		function Request(argname){ 
+			var url = document.location.href; 
+			var arrStr =url.substring(url.indexOf("?")+1).split("&"); 
+			//return arrStr; 
+			for(var i =0;i<arrStr.length;i++) 
+			{ 
+				var loc = arrStr[i].indexOf(argname+"="); 
+
+				if(loc!=-1) 
+				{ 
+					return arrStr[i].replace(argname+"=","").replace("?",""); 
+					break; 
+				} 
+
+			} 
+			return ""; 
+		}
+
+		function BarCodePrint(){
+			  // SetPort(portNo);
+			  // var SN=Request("SN");
+			  // var Qty=Request("Qty");
+			  SendData(GenZPLCode());
+		 }
+
+		 function SendData(data){
+		 	var thePort = document.getElementById('thePort');
+		 	thePort.Send(data + "\n");
+		 }
+
+		 function SetPort(portNo){
+		 	var thePort = document.getElementById('thePort');
+			thePort.Port      = portNo;
+			thePort.BaudRate  = 9600;
+			thePort.DataBits  = 8;
+			thePort.Parity    = 0; //NOPARITY
+			thePort.StopBits  = 0; //one stop bit
+			thePort.DataMode  = 1;
+			thePort.Connected = 1;
+			if(thePort.error>0){//Display errors if found
+	       		alert(thePort.ErrorDescription);
+			} 
+		 }
+
+		 function ClosePort(portNo){
+		 	var thePort = document.getElementById('thePort');
+		 	thePort.Connected = 0;
+		 }
+
+	</script>
+
+</head>
+<body onload="{init();}">
+	<h2>本页可打印机架条码,</h2>
+	<h3>当前支持600DPI打印机</h3>
+	<!-- <label  for="printerType">请打印选择打印机类型：</label>
+	<input type="radio" name="printerType" value="600DPI"  id="600DPI" checked="checked"/><label for="600DPI">600DPI</label>
+	<input type="radio" name="printerType" value="300DPI"  id="300DPI"/><label for="300DPI">300DPI</label> -->
+	<!--input type="radio" name="printerType" value="300DPIX2"  id="300DPIX2"></input><label for="300DPIX2">300DPIX2</label>
+	<input type="radio" name="printerType" value="300DPIQAD"  id="300DPIQAD"></input><label for="300DPIQAD">300DPIQAD</label-->
+	<!-- <br/>
+	<br/> -->
+
+	<label for="portList">请选择连接打印机的串口: </label><select id="portList" style="width: 100px;"></select>
+	<span id="initResultStr" style="color: red; padding-left: 20px;"></span><br/>
+	<br/>
+	<br/>
+	<!-- <label for="count">打印条码数量: </label><input type="text" id="count" style="width: 181px; " value="1"/><span>(1 ~ 10)</span> -->
+	<!-- <span id="countResultStr" style="color: red; padding-left: 20px;"></span>
+	<br/>
+	<br/> -->
+	<!-- <label for="sn">请输入SN: </label>
+	<input type="text" id="sn" style="width: 208px;" onkeypress="EnterPress(event)"/> -->
+	<input type="button" value="点击打印" style="margin-left: 70px; padding-left: 50px; padding-right: 50px;" onclick="printSN()"/>
+	<span id="printResultStr" style="color: red; padding-left: 20px;"></span><br/>
+	<br/>
+	<h3 style="margin-left: 60px; color: green; ">打完后请关闭本页面。</h3>
+	<!-- <span id="snFormatPrompt" style="margin-right: 0px;">
+		<br/><br/>
+		格式：YYDDDMXXXXX<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"YY": Manufacture year<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"DDD": Manufacture day<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"M": Manufacturing facility. Value:"A" for Nortek Linear<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"XXXXX": Production sequence<br/>
+	</span> -->
+	<a href="download/exe/StrokeReaderSetup.exe">打印用ActiveX控件，点击下载后安装，请务必安装</a>
+	<br/>
+	<span>默认支持IE内核浏览器.如IE6-IE11, <a href="download/explorers/360se6_6.3.1.196.exe">360浏览器</a></span><br/>
+	<span>
+		<a href="download/explorers/Firefox-full-latest.exe">Firefox</a> ,
+		<a href="download/explorers/44.0.2403.157_chrome_installer.exe">Chrome</a>
+		浏览器请下载<a href="download/explorers/ffactivex-setup-r39.exe">Firefox Activex PlugIn</a>插件安装后可支持打印
+	</span>
+
+	<br/>
+	<div id="thePortObject"></div>
+	<!-- <object id="thePort" classid="CLSID:7E42B8C5-73BE-4806-8904-FF4080A696EC"></object> -->
+</body>
+</html>
